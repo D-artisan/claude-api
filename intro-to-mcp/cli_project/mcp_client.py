@@ -5,6 +5,10 @@ from contextlib import AsyncExitStack
 from mcp import ClientSession, StdioServerParameters, types
 from mcp.client.stdio import stdio_client
 
+import warnings
+warnings.filterwarnings("ignore", category=ResourceWarning)
+sys.unraisablehook = lambda unraisable: None
+
 
 class MCPClient:
     def __init__(
@@ -42,13 +46,13 @@ class MCPClient:
         return self._session
 
     async def list_tools(self) -> list[types.Tool]:
-        # TODO: Return a list of tools defined by the MCP server
-        return []
+        result = await self.session().list_tools()
+        return result.tools
 
     async def call_tool(
         self, tool_name: str, tool_input: dict
     ) -> types.CallToolResult | None:
-        # TODO: Call a particular tool and return the result
+        return await self.session().call_tool(tool_name, tool_input)
         return None
 
     async def list_prompts(self) -> list[types.Prompt]:
@@ -82,10 +86,14 @@ async def main():
         command="uv",
         args=["run", "mcp_server.py"],
     ) as _client:
-        pass
+        result = await _client.list_tools()
+        print("Available tools:", result)
 
 
 if __name__ == "__main__":
+    import warnings
+    warnings.filterwarnings("ignore", category=ResourceWarning)
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     asyncio.run(main())
+ 
